@@ -436,10 +436,9 @@ export const reportsAdminStatus = (
         return { error: 'Reports are disabled.' };
     }
     const validStatuses: ReportStatus[] = ['open', 'inReview', 'resolved'];
-    if (typeof reportId !== 'string' || !validStatuses.includes(status as ReportStatus)) {
+    if (typeof reportId !== 'string' || !reportId.length || !validStatuses.includes(status as ReportStatus)) {
         return { error: 'Invalid request.' };
-    }
-    try {
+    }    try {
         const success = txCore.database.reports.updateStatus(
             reportId,
             status as ReportStatus,
