@@ -4,6 +4,7 @@ import { useAuthedFetcher } from '@/hooks/fetch';
 import { useCsrfToken } from '@/hooks/auth';
 import type { AddonPanelDescriptor } from '@shared/addonTypes';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { getSocket, joinSocketRoom, leaveSocketRoom } from '@/lib/utils';
 
 /**
  * Loaded addon entry module — exports from the addon's panel/index.js
@@ -108,6 +109,11 @@ export function useAddonLoader() {
                     ui: {
                         DropdownMenuItem,
                         DropdownMenuSeparator,
+                    },
+                    socket: {
+                        get: getSocket,
+                        joinRoom: joinSocketRoom,
+                        leaveRoom: leaveSocketRoom,
                     },
                 };
 

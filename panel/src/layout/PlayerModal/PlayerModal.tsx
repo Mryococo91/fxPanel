@@ -242,7 +242,12 @@ export default function PlayerModal() {
                                 {addonTabs.map((w) => (
                                     selectedTab === `addon:${w.addonId}:${w.title}` && (
                                         <ErrorBoundary key={`${w.addonId}-${w.title}`} fallback={<div className="p-4 text-sm text-destructive">Addon tab error: {w.title}</div>}>
-                                            <w.Component />
+                                            <w.Component
+                                                license={modalData.player.license}
+                                                displayName={modalData.player.displayName}
+                                                netid={modalData.player.netid}
+                                                playerRef={playerRef}
+                                            />
                                         </ErrorBoundary>
                                     )
                                 ))}
