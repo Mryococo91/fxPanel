@@ -16,7 +16,7 @@ import LiveConsoleSearchBar from './LiveConsoleSearchBar';
 import LiveConsoleSaveSheet from './LiveConsoleSaveSheet';
 
 import ScrollDownAddon from './ScrollDownAddon';
-import terminalOptions from './xtermOptions';
+import terminalOptions, { buildTheme } from './xtermOptions';
 import './xtermOverrides.css';
 import '@xterm/xterm/css/xterm.css';
 import { getSocket, joinSocketRoom, leaveSocketRoom } from '@/lib/utils';
@@ -212,6 +212,22 @@ export default function LiveConsolePage() {
                 return true;
             });
         }
+    }, [term]);
+
+    // Re-apply xterm theme when light/dark mode changes
+    useEffect(() => {
+        const observer = new MutationObserver(() => {
+            // Double rAF to ensure CSS variables have been fully recalculated
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    term.options.theme = buildTheme();
+                    term.options.fontWeight = isDark ? '300' : '400';
+                });
+            });
+        });
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+        return () => observer.disconnect();
     }, [term]);
 
     useEventListener('keydown', (e: KeyboardEvent) => {

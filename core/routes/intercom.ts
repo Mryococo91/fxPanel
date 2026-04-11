@@ -112,7 +112,7 @@ const screenshotResultSchema = z
     .object({
         ...baseIntercomSchema,
         requestId: z.string(),
-        fileName: z.string().optional(),
+        imageData: z.string().optional(),
         error: z.string().optional(),
     })
     .strict();
@@ -270,7 +270,7 @@ export default async function Intercom(ctx: InitializedCtx) {
     } else if (validScope == 'reportAdminStatus') {
         return ctx.send(reportsAdminStatus(postData.reportId, postData.status, postData.adminName));
     } else if (validScope == 'screenshotResult') {
-        resolveScreenshot(postData.requestId, postData.fileName, postData.error);
+        resolveScreenshot(postData.requestId, postData.imageData, postData.error);
         return ctx.send({ success: true });
     } else if (validScope === 'spectateFrame') {
         console.warn(

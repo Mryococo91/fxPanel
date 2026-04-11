@@ -17,14 +17,10 @@ export const AddonPageSchema = z.object({
 });
 
 export const AddonWidgetSchema = z.object({
-    slot: z.enum([
-        'dashboard.main',
-        'dashboard.sidebar',
-        'player-modal.tabs',
-        'player-modal.actions',
-        'server.status-cards',
-        'settings.sections',
-    ]),
+    slot: z.string()
+        .min(1)
+        .max(128)
+        .regex(/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/, 'Slot must be dot-separated lowercase segments (e.g. "dashboard.main", "settings.tab.discord")'),
     component: z.string().min(1),
     title: z.string().min(1).max(64),
     defaultSize: z.enum(['full', 'half', 'quarter']).default('half'),

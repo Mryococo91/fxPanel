@@ -179,10 +179,16 @@ const DialogActionView: React.FC = () => {
     const handleHeal = () => {
         if (!userHasPerm('players.heal', playerPerms)) return showNoPerms('Heal');
 
-        fetchNui('healPlayer', { id: assocPlayer.id });
-        enqueueSnackbar(t('nui_menu.player_modal.actions.interaction.notifications.heal_player'), {
-            variant: 'success',
-        });
+        fetchWebPipe<GenericApiResp>(`/player/heal?mutex=current&netid=${assocPlayer.id}`, {
+            method: 'POST',
+            data: {},
+        })
+            .then((result) => {
+                handleGenericApiResponse(result, 'interaction.notifications.heal_player');
+            })
+            .catch((error) => {
+                enqueueSnackbar((error as Error).message, { variant: 'error' });
+            });
     };
 
     const handleGoTo = () => {

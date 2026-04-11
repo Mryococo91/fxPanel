@@ -32,6 +32,8 @@ import SettingsCardBlank from './tabCards/_blank';
 import { PageHeader, PageHeaderChangelog } from '@/components/page-header';
 import { emsg } from '@shared/emsg';
 import AddonsContent from '@/pages/AddonsPage';
+import { useAddonWidgets, useAddonWidgetsByPrefix } from '@/hooks/addons';
+import { ErrorBoundary } from 'react-error-boundary';
 
 //Tab configuration
 const settingsTabsBase = [
@@ -108,10 +110,16 @@ export default function SettingsPage() {
     const openConfirmDialog = useOpenConfirmDialog();
     const { hasPerm } = useAdminPerms();
 
+    // Addon widgets: full custom tabs (e.g. "settings.tab") and per-tab injections (e.g. "settings.tab.discord")
+    const addonSettingsTabs = useAddonWidgets('settings.tab');
+    const addonTabInject = useAddonWidgetsByPrefix('settings.tab.');
+    const settingsSections = useAddonWidgets('settings.sections');
+
     //Check for default tab in URL hash
     const [tab, setTab] = useState(() => {
         const pageHash = window.location?.hash.slice(1);
         if (pageHash === 'addons') return 'addons';
+        if (pageHash?.startsWith('addon-')) return pageHash;
         return settingsTabs.find((tab) => tab.ctx.tabId === pageHash)?.ctx.tabId ?? settingsTabs[0].ctx.tabId;
     });
 
@@ -238,27 +246,54 @@ export default function SettingsPage() {
                                 {tab.ctx.tabName}
                             </TabsTrigger>
                         ))}
+                        {addonSettingsTabs.map((w) => (
+                            <TabsTrigger key={`addon-${w.addonId}-${w.title}`} value={`addon-${w.addonId}-${w.title}`} className="hover:text-primary">
+                                {w.title}
+                            </TabsTrigger>
+                        ))}
                         {hasPerm('all_permissions') && (
                             <TabsTrigger value="addons" className="hover:text-primary">
                                 Addons
                             </TabsTrigger>
                         )}
                     </TabsList>
-                    {settingsTabs.map((tab) => (
-                        <TabsContent value={tab.ctx.tabId} key={tab.ctx.tabId} className="mt-6">
-                            <SettingsTab
-                                tab={tab}
-                                pageCtx={{
-                                    apiData: swr.data,
-                                    isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm('settings.write'),
-                                    isLoading: swr.isLoading,
-                                    isSaving,
-                                    swrError: swr.error ? swr.error.message : undefined,
-                                    cardPendingSave,
-                                    setCardPendingSave,
-                                    saveChanges,
-                                }}
-                            />
+                    {settingsTabs.map((tab) => {
+                        // Find any addon widgets injected into this specific tab
+                        const tabInjectWidgets = addonTabInject.filter(
+                            (w) => w.slot === `settings.tab.${tab.ctx.tabId}`
+                        );
+                        return (
+                            <TabsContent value={tab.ctx.tabId} key={tab.ctx.tabId} className="mt-6">
+                                <SettingsTab
+                                    tab={tab}
+                                    pageCtx={{
+                                        apiData: swr.data,
+                                        isReadOnly: swr.isLoading || isSaving || !swr.data || !hasPerm('settings.write'),
+                                        isLoading: swr.isLoading,
+                                        isSaving,
+                                        swrError: swr.error ? swr.error.message : undefined,
+                                        cardPendingSave,
+                                        setCardPendingSave,
+                                        saveChanges,
+                                    }}
+                                />
+                                {tabInjectWidgets.length > 0 && (
+                                    <div className="mt-6 flex flex-col gap-4">
+                                        {tabInjectWidgets.map((w) => (
+                                            <ErrorBoundary key={`${w.addonId}-${w.title}`} fallback={<div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">Addon error: {w.title}</div>}>
+                                                <w.Component />
+                                            </ErrorBoundary>
+                                        ))}
+                                    </div>
+                                )}
+                            </TabsContent>
+                        );
+                    })}
+                    {addonSettingsTabs.map((w) => (
+                        <TabsContent key={`addon-${w.addonId}-${w.title}`} value={`addon-${w.addonId}-${w.title}`} className="mt-6">
+                            <ErrorBoundary fallback={<div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">Addon tab error: {w.title}</div>}>
+                                <w.Component />
+                            </ErrorBoundary>
                         </TabsContent>
                     ))}
                     {hasPerm('all_permissions') && (

@@ -26,49 +26,44 @@ export default () => {
         id: (ctx: any) => ctx.txVars.realIP,
     });
 
-    // TTL Map wrapper for rate limiters — auto-evicts expired entries
-    const createTtlMap = (ttlMs: number) => {
-        const map = new Map<string, any>();
-        const expiry = new Map<string, number>();
-        const original = {
-            get: map.get.bind(map),
-            set: map.set.bind(map),
-            has: map.has.bind(map),
-            delete: map.delete.bind(map),
-        };
-        map.get = (key: string) => {
-            const exp = expiry.get(key);
+    // TTL Map subclass for rate limiters — auto-evicts expired entries
+    // Must extend Map so koa-ratelimit's `db instanceof Map` assertion passes.
+    class TtlMap extends Map<string, any> {
+        private _expiry = new Map<string, number>();
+        constructor(private _ttlMs: number) {
+            super();
+            setInterval(() => {
+                const now = Date.now();
+                for (const [key, exp] of this._expiry) {
+                    if (now > exp) this.delete(key);
+                }
+            }, 60_000).unref();
+        }
+        override get(key: string) {
+            const exp = this._expiry.get(key);
             if (exp !== undefined && Date.now() > exp) {
-                map.delete(key);
+                this.delete(key);
                 return undefined;
             }
-            return original.get(key);
-        };
-        map.set = (key: string, value: any) => {
-            expiry.set(key, Date.now() + ttlMs);
-            return original.set(key, value);
-        };
-        map.has = (key: string) => {
-            return map.get(key) !== undefined;
-        };
-        map.delete = (key: string) => {
-            expiry.delete(key);
-            return original.delete(key);
-        };
-        // Sweep expired entries every 60 seconds
-        setInterval(() => {
-            const now = Date.now();
-            for (const [key, exp] of expiry) {
-                if (now > exp) map.delete(key);
-            }
-        }, 60_000).unref();
-        return map;
-    };
+            return super.get(key);
+        }
+        override set(key: string, value: any) {
+            this._expiry.set(key, Date.now() + this._ttlMs);
+            return super.set(key, value);
+        }
+        override has(key: string) {
+            return this.get(key) !== undefined;
+        }
+        override delete(key: string) {
+            this._expiry.delete(key);
+            return super.delete(key);
+        }
+    }
 
     // Rate limiter for mutation endpoints (kick, ban, warn, etc.) — stricter
     const mutationLimiter = KoaRateLimit({
         driver: 'memory',
-        db: createTtlMap(60_000),
+        db: new TtlMap(60_000),
         duration: 60 * 1000, // 1 minute window
         errorMessage: JSON.stringify({
             error: 'Too many requests. Please slow down.',
@@ -81,7 +76,7 @@ export default () => {
     // Rate limiter for read endpoints (search, logs, data) — moderate
     const readLimiter = KoaRateLimit({
         driver: 'memory',
-        db: createTtlMap(60_000),
+        db: new TtlMap(60_000),
         duration: 60 * 1000, // 1 minute window
         errorMessage: JSON.stringify({
             error: 'Too many requests. Please slow down.',
@@ -242,8 +237,9 @@ export default () => {
     router.post('/addons/:addonId/approve', apiAuthMw, mutationLimiter, routes.addons_approve);
     router.post('/addons/:addonId/revoke', apiAuthMw, mutationLimiter, routes.addons_revoke);
     router.all('/addons/:addonId/api/(.*)', apiAuthMw, readLimiter, routes.addons_proxy);
-    //Addon static file serving (panel bundles & static assets)
+    //Addon static file serving (panel bundles, NUI bundles & static assets)
     router.get('/addons/:addonId/panel/(.*)', routes.addons_servePanelFile);
+    router.get('/nui/addons/:addonId/(.*)', routes.addons_serveNuiFile);
     router.get('/addons/:addonId/static/(.*)', routes.addons_serveStaticFile);
 
     //Host routes

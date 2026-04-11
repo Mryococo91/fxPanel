@@ -1,6 +1,7 @@
 import { MenuNavLink } from '@/components/mainPageLink';
 import TxAnchor from '@/components/TxAnchor';
 import { useAdminPerms } from '@/hooks/auth';
+import { useAddonLoader } from '@/hooks/addons';
 import { serverNameAtom, txConfigStateAtom } from '@/hooks/status';
 import { useContentRefresh } from '@/hooks/pages';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ import { TxConfigState } from '@shared/enums';
 import { GlobalStatusType } from '@shared/socketioTypes';
 import { useAtomValue } from 'jotai';
 import {
+    BlocksIcon,
     BoxIcon,
     ChevronRightSquareIcon,
     DnaIcon,
@@ -83,6 +85,8 @@ function PendingServerConfigure({ txConfigState }: PendingServerConfigureProps) 
 export default function ServerMenu() {
     const txConfigState = useAtomValue(txConfigStateAtom);
     const { hasPerm } = useAdminPerms();
+    const { pages: addonPages } = useAddonLoader();
+    const sidebarAddonPages = addonPages.filter(p => p.sidebar !== false);
 
     const isConfigPending = txConfigState !== TxConfigState.Ready;
     return (
@@ -118,6 +122,21 @@ export default function ServerMenu() {
                             <DnaIcon className="mr-2 h-4 w-4" />
                             Advanced
                         </MenuNavLink>
+                    )}
+                    {sidebarAddonPages.length > 0 && (
+                        <>
+                            <hr className="my-1.5 border-border" />
+                            {sidebarAddonPages.map((page) => (
+                                <MenuNavLink
+                                    key={page.path}
+                                    href={page.path}
+                                    disabled={page.permission ? !hasPerm(page.permission) : false}
+                                >
+                                    <BlocksIcon className="mr-2 h-4 w-4" />
+                                    {page.title}
+                                </MenuNavLink>
+                            ))}
+                        </>
                     )}
                     {import.meta.env.DEV && (
                         <MenuNavLink href="/test" className="text-accent">

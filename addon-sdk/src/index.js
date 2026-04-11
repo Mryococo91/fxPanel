@@ -198,7 +198,8 @@ export function createAddon() {
                         admin: {
                             name: admin.name,
                             permissions: admin.permissions,
-                            hasPermission: (perm) => admin.permissions.includes(perm),
+                            isMaster: !!admin.isMaster,
+                            hasPermission: (perm) => !!admin.isMaster || admin.permissions.includes('all_permissions') || admin.permissions.includes(perm),
                         },
                     };
 

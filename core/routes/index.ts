@@ -116,6 +116,7 @@ export {
     addonsRevoke as addons_revoke,
     addonsProxy as addons_proxy,
     addonsServePanelFile as addons_servePanelFile,
+    addonsServeNuiFile as addons_serveNuiFile,
     addonsServeStaticFile as addons_serveStaticFile,
 } from './addons';
 

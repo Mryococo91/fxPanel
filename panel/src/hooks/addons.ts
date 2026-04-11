@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import React from 'react';
 import { useAuthedFetcher } from '@/hooks/fetch';
+import { useCsrfToken } from '@/hooks/auth';
 import type { AddonPanelDescriptor } from '@shared/addonTypes';
+import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 /**
  * Loaded addon entry module — exports from the addon's panel/index.js
@@ -27,6 +30,7 @@ export interface AddonPageRoute {
     addonId: string;
     path: string;
     title: string;
+    sidebar?: boolean;
     permission?: string;
     Component: React.ComponentType<any>;
 }
@@ -38,6 +42,7 @@ export interface AddonWidgetEntry {
     addonId: string;
     slot: string;
     title: string;
+    defaultSize?: string;
     permission?: string;
     Component: React.ComponentType<any>;
 }
@@ -53,6 +58,7 @@ let loadPromise: Promise<LoadedAddon[]> | null = null;
  */
 export function useAddonLoader() {
     const fetcher = useAuthedFetcher();
+    const csrfToken = useCsrfToken();
     const [addons, setAddons] = useState<LoadedAddon[]>(cachedAddons ?? []);
     const [loading, setLoading] = useState(!cachedAddons);
     const [error, setError] = useState<string | null>(null);
@@ -90,16 +96,25 @@ export function useAddonLoader() {
 
                 const loaded: LoadedAddon[] = [];
 
+                // Expose React and API helpers as globals so addon scripts can use them
+                (window as any).React = React;
+                (window as any).txAddonApi = {
+                    ...(window as any).txAddonApi,
+                    csrfToken,
+                    getHeaders: () => ({
+                        'Content-Type': 'application/json',
+                        'X-TxAdmin-CsrfToken': csrfToken ?? '',
+                    }),
+                    ui: {
+                        DropdownMenuItem,
+                        DropdownMenuSeparator,
+                    },
+                };
+
                 for (const descriptor of resp.addons) {
                     try {
-                        // Load styles if present
-                        if (descriptor.stylesUrl) {
-                            const link = document.createElement('link');
-                            link.rel = 'stylesheet';
-                            link.href = descriptor.stylesUrl;
-                            link.dataset.addonId = descriptor.id;
-                            document.head.appendChild(link);
-                        }
+                        // Skip CSS injection — addon stylesheets are injected server-side
+                        // into the HTML <head> so they apply on all pages including auth
 
                         // Dynamically import the addon entry script
                         // The entry URL is served by the core at /addons/:id/panel/index.js
@@ -153,6 +168,7 @@ export function useAddonLoader() {
                 addonId: addon.descriptor.id,
                 path: `/addon/${addon.descriptor.id}${page.path}`,
                 title: page.title,
+                sidebar: page.sidebar,
                 permission: page.permission,
                 Component,
             });
@@ -170,6 +186,7 @@ export function useAddonLoader() {
                 addonId: addon.descriptor.id,
                 slot: widget.slot,
                 title: widget.title,
+                defaultSize: widget.defaultSize,
                 permission: widget.permission,
                 Component,
             });
@@ -185,6 +202,14 @@ export function useAddonLoader() {
 export function useAddonWidgets(slot: string): AddonWidgetEntry[] {
     const { widgets } = useAddonLoader();
     return widgets.filter(w => w.slot === slot);
+}
+
+/**
+ * Get widgets matching a slot prefix (e.g. 'settings.tab.' matches 'settings.tab.discord').
+ */
+export function useAddonWidgetsByPrefix(prefix: string): AddonWidgetEntry[] {
+    const { widgets } = useAddonLoader();
+    return widgets.filter(w => w.slot.startsWith(prefix));
 }
 
 /**

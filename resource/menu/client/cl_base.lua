@@ -307,6 +307,10 @@ RegisterNetEvent('txcl:heal', function()
     end
 end)
 
+CreateThread(function()
+    NetworkSetLocalPlayerSyncLookAt(true)
+end)
+
 -- Tell the user he is an admin and that /tx is available
 AddEventHandler('playerSpawned', function()
     Wait(15000)

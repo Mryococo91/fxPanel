@@ -458,7 +458,7 @@ end
 
 --- Handler for player warned event
 --- Warn specific player via server ID
-local pendingWarnings = {}
+TX_PENDING_WARNINGS = {}
 TX_EVENT_HANDLERS.playerWarned = function(eventData, isWarningNew)
     if isWarningNew == nil then
         isWarningNew = true
@@ -481,7 +481,7 @@ TX_EVENT_HANDLERS.playerWarned = function(eventData, isWarningNew)
         return
     end
 
-    pendingWarnings[tostring(eventData.targetNetId)] = eventData.actionId
+    TX_PENDING_WARNINGS[tostring(eventData.targetNetId)] = eventData.actionId
     local authorName = cvHideAdminInPunishments and txServerName or eventData.author or 'anonym'
     TriggerClientEvent(
         'txcl:showWarning',
@@ -498,21 +498,21 @@ end
 
 -- Event so the client can ack the warning
 RegisterNetEvent('txsv:ackWarning', function(actionId)
-    if pendingWarnings[tostring(source)] == actionId then
+    if TX_PENDING_WARNINGS[tostring(source)] == actionId then
         PrintStructuredTrace(json.encode({
             type = 'txAdminAckWarning',
             actionId = actionId,
         }))
-        pendingWarnings[tostring(source)] = nil
+        TX_PENDING_WARNINGS[tostring(source)] = nil
     end
 end)
 
 -- Remove any pending warnings when a player leaves
 AddEventHandler('playerDropped', function()
     local srcStr = tostring(source)
-    local pendingActionId = pendingWarnings[srcStr]
+    local pendingActionId = TX_PENDING_WARNINGS[srcStr]
     if pendingActionId ~= nil then
-        pendingWarnings[srcStr] = nil
+        TX_PENDING_WARNINGS[srcStr] = nil
         TxPrint(string.format('Player #%s left without accepting the warning [%s]', srcStr, pendingActionId))
     end
 end)
@@ -692,11 +692,8 @@ RegisterNetEvent('txsv:screenshot:result', function(requestId, data, errorMsg)
         return sendScreenshotResult(requestId, { error = 'No screenshot data received.' })
     end
 
-    -- Save to file to avoid intercom body size limits
-    local filename = 'screenshot_' .. requestId .. '.webp'
-    SaveResourceFile(GetCurrentResourceName(), filename, data, #data)
-    TxPrint('[screenshot] Screenshot saved as ' .. filename)
-    sendScreenshotResult(requestId, { fileName = filename })
+    -- Send the data URL directly to the core via intercom
+    sendScreenshotResult(requestId, { imageData = data })
 end)
 
 

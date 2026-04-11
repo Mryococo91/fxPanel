@@ -69,21 +69,26 @@ RegisterNetEvent('txcl:showWarning', function(author, reason, actionId, isWarnin
     })
     local currentActionId = actionId
     CreateThread(function()
-        -- 5-second countdown before allowing dismissal via single press
-        local countdownSeconds = 5
-        for i = countdownSeconds, 1, -1 do
-            if not warnActive or currentActionId ~= actionId then return end
-            SendMenuMessage('pulseWarning', i)
-            Wait(1000)
-        end
-        -- After countdown, wait for a single key press to dismiss
-        while warnActive and currentActionId == actionId do
+        local countLimit = 100 --10 seconds
+        local count = 0
+        while true do
             Wait(100)
-            if IsControlJustPressed(dismissKeyGroup, dismissKey) then
-                warnActive = false
-                SendMenuMessage('closeWarning')
-                TriggerServerEvent('txsv:ackWarning', actionId)
-                return
+            if IsControlPressed(dismissKeyGroup, dismissKey) then
+                count = count + 1
+                if count >= countLimit then
+                    warnActive = false
+                    SendMenuMessage('closeWarning')
+                    TriggerServerEvent('txsv:ackWarning', actionId)
+                    return
+                elseif math.fmod(count, 10) == 0 then
+                    local secsRemaining = (countLimit - count) / 10
+                    SendMenuMessage('pulseWarning', secsRemaining)
+                end
+            else
+                if count > 10 then
+                    SendMenuMessage('resetWarning')
+                end
+                count = 0
             end
         end
     end)

@@ -141,6 +141,21 @@ export default async function getReactIndex(ctx: CtxWithVars | AuthedCtx) {
     replacers.txConstsInjection = `<script${nonce}>window.txConsts = ${JSON.stringify(injectedConsts)};</script>`;
     replacers.devModules = txDevEnv.ENABLED ? devModulesScript : '';
 
+    //Prepare addon head tags (CSS for approved/running addons)
+    //Only CSS is injected here — JS requires React globals set up by the panel app
+    const addonTags: string[] = [];
+    try {
+        const panelManifest = txCore.addonManager.getPanelManifest();
+        for (const addon of panelManifest) {
+            if (addon.stylesUrl) {
+                addonTags.push(`<link rel="stylesheet" href="${addon.stylesUrl}" data-addon-id="${addon.id}">`);
+            }
+        }
+    } catch (error) {
+        console.verbose.warn(`Failed to generate addon head tags: ${emsg(error)}`);
+    }
+    replacers.addonHeadTags = addonTags.join('\n        ');
+
     //Prepare custom themes style tag
     if (tmpCustomThemes.length) {
         const cssThemes = [];

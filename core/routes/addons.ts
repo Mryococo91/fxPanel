@@ -127,9 +127,9 @@ export async function addonsProxy(ctx: AuthedCtx) {
         return ctx.send({ error: 'Addon is not running.' });
     }
 
-    // Extract the path after /api/addons/:addonId/api/
+    // Extract the path after /addons/:addonId/api/
     const fullPath = ctx.path;
-    const prefix = `/api/addons/${addonId}/api`;
+    const prefix = `/addons/${addonId}/api`;
     const addonPath = fullPath.slice(prefix.length) || '/';
 
     try {
@@ -141,6 +141,7 @@ export async function addonsProxy(ctx: AuthedCtx) {
             admin: {
                 name: ctx.admin.name,
                 permissions: ctx.admin.permissions,
+                isMaster: ctx.admin.isMaster,
             },
         });
 
@@ -176,6 +177,31 @@ export async function addonsServePanelFile(ctx: InitializedCtx) {
     const filePath = ctx.params[0] || 'index.js';
 
     const resolved = txCore.addonManager.resolveAddonStaticPath(addonId, 'panel', filePath);
+    if (!resolved) {
+        ctx.status = 404;
+        return;
+    }
+
+    const ext = path.extname(resolved).toLowerCase();
+    ctx.type = MIME_TYPES[ext] || 'application/octet-stream';
+    ctx.set('Cache-Control', 'public, max-age=300');
+    ctx.body = fs.createReadStream(resolved);
+}
+
+/**
+ * GET /nui/addons/:addonId/*
+ * Serve addon NUI static files.
+ */
+export async function addonsServeNuiFile(ctx: InitializedCtx) {
+    const addonId = ctx.params.addonId;
+    if (!addonId || !/^[a-z0-9][a-z0-9-]{1,62}[a-z0-9]$/.test(addonId)) {
+        ctx.status = 404;
+        return;
+    }
+
+    const filePath = ctx.params[0] || 'index.js';
+
+    const resolved = txCore.addonManager.resolveAddonStaticPath(addonId, 'nui', filePath);
     if (!resolved) {
         ctx.status = 404;
         return;

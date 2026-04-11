@@ -3,7 +3,7 @@ import useSWR from 'swr';
 import { useAuthedFetcher, useBackendApi } from '@/hooks/fetch';
 import { useAdminPerms } from '@/hooks/auth';
 import { txToast } from '@/components/txToaster';
-import { resetAddonCache } from '@/hooks/addons';
+import { resetAddonCache, useAddonWidgets } from '@/hooks/addons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -144,6 +144,7 @@ export default function AddonsPage() {
     const { hasPerm } = useAdminPerms();
     const isReadOnly = !hasPerm('all_permissions');
     const fetcher = useAuthedFetcher();
+    const settingsWidgets = useAddonWidgets('settings.sections');
     const addonApi = useBackendApi<any>({
         method: 'POST',
         path: '',
@@ -257,6 +258,23 @@ export default function AddonsPage() {
                     />
                 ))}
             </div>
+
+            {/* Addon Settings Widgets */}
+            {settingsWidgets.length > 0 && (
+                <div className="space-y-4">
+                    <h2 className="text-lg font-semibold">Addon Settings</h2>
+                    {settingsWidgets.map((widget) => (
+                        <Card key={`${widget.addonId}-${widget.slot}`}>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-base">{widget.title}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <widget.Component />
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            )}
 
             {/* Approval Dialog */}
             <Dialog open={!!approvalTarget} onOpenChange={(open) => !open && setApprovalTarget(null)}>
