@@ -62,10 +62,12 @@ local function rebuildTagConfig()
     local newPriority = {}
 
     if #defs > 0 then
-        -- Sort a copy by priority (lower = higher priority)
+        -- Sort a copy by priority (lower = higher priority), excluding disabled tags
         local sorted = {}
         for _, d in ipairs(defs) do
-            sorted[#sorted + 1] = d
+            if d.enabled ~= false then
+                sorted[#sorted + 1] = d
+            end
         end
         table.sort(sorted, function(a, b) return a.priority < b.priority end)
 

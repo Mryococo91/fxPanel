@@ -86,7 +86,7 @@ export default function ServerMenu() {
     const txConfigState = useAtomValue(txConfigStateAtom);
     const { hasPerm } = useAdminPerms();
     const { pages: addonPages } = useAddonLoader();
-    const sidebarAddonPages = addonPages.filter(p => p.sidebar !== false);
+    const sidebarAddonPages = addonPages.filter(p => p.sidebar === true);
 
     const isConfigPending = txConfigState !== TxConfigState.Ready;
     return (

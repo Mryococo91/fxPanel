@@ -11,6 +11,7 @@ const customTagSchema = z.object({
     label: z.string().min(1).max(24),
     color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
     priority: z.number().int().min(1).max(999),
+    enabled: z.boolean().default(true),
 });
 export type CustomTagConfig = z.infer<typeof customTagSchema>;
 

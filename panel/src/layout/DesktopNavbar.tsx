@@ -82,7 +82,6 @@ function HeaderMenuItem(props: HeaderMenuLinkProps) {
 export default function DesktopNavbar() {
     const { hasPerm } = useAdminPerms();
     const { pages: addonPages } = useAddonLoader();
-    const sidebarAddonPages = addonPages.filter(p => p.sidebar !== false);
 
     return (
         <div className="flex flex-row space-x-1 select-none">
@@ -177,15 +176,15 @@ export default function DesktopNavbar() {
                 </NavigationMenuList>
             </NavigationMenu>
 
-            {sidebarAddonPages.length > 0 && (
+            {addonPages.length > 0 && (
                 <NavigationMenu>
                     <NavigationMenuList>
-                        {sidebarAddonPages.length === 1 ? (
+                        {addonPages.length === 1 ? (
                             <HeaderMenuItem
-                                href={sidebarAddonPages[0].path}
-                                disabled={sidebarAddonPages[0].permission ? !hasPerm(sidebarAddonPages[0].permission) : false}
+                                href={addonPages[0].path}
+                                disabled={addonPages[0].permission ? !hasPerm(addonPages[0].permission) : false}
                             >
-                                {sidebarAddonPages[0].title}
+                                {addonPages[0].title}
                             </HeaderMenuItem>
                         ) : (
                             <NavigationMenuItem>
@@ -199,7 +198,7 @@ export default function DesktopNavbar() {
                                     Addons
                                 </NavigationMenuTrigger>
                                 <NavigationMenuContent className="flex list-none flex-col gap-2 p-4">
-                                    {sidebarAddonPages.map((page) => (
+                                    {addonPages.map((page) => (
                                         <HeaderMenuLink
                                             key={page.path}
                                             className="w-36 justify-start"

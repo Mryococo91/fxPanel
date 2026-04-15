@@ -219,7 +219,7 @@ function AddonRoute({ route }: { route: AddonPageRoute }) {
 }
 
 export function MainRouterInner() {
-    const { pages: addonPages } = useAddonLoader();
+    const { pages: addonPages, loading: addonsLoading } = useAddonLoader();
 
     return (
         <Switch>
@@ -231,6 +231,13 @@ export function MainRouterInner() {
             {addonPages.map((route) => (
                 <AddonRoute key={route.path} route={route} />
             ))}
+
+            {/* While addons are loading, don't show NotFound for addon paths */}
+            {addonsLoading && (
+                <WouterRoute path="/addon/:rest*">
+                    {null}
+                </WouterRoute>
+            )}
 
             {/* Other Routes - they need to set the title manuually */}
             {import.meta.env.DEV && (

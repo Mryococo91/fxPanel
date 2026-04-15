@@ -25,8 +25,7 @@ import { BlocksIcon } from 'lucide-react';
 export function GlobalMenuSheet() {
     const { isSheetOpen, setIsSheetOpen } = useGlobalMenuSheet();
     const { hasPerm } = useAdminPerms();
-    const { pages } = useAddonLoader();
-    const addonPages = pages.filter((p) => p.sidebar !== false);
+    const { pages: addonPages } = useAddonLoader();
 
     return (
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
