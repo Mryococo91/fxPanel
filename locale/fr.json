@@ -89,13 +89,13 @@
         "frozen": {
             "froze_player": "Vous avez gelé le joueur !",
             "unfroze_player": "Vous avez dégelé le joueur !",
-            "was_frozen": "Un administrateur du serveur vous a gelé !"
+            "was_frozen": "Vous avez été gelé par un administrateur du serveur !"
         },
         "common": {
             "cancel": "Annuler",
             "submit": "Valider",
             "error": "Une erreur s'est produite",
-            "copied": "Copié dans le presse-papiers."
+            "copied": "Copié dans le presse-papier."
         },
         "page_main": {
             "tooltips": {
@@ -173,7 +173,7 @@
                 },
                 "delete": {
                     "title": "Supprimer",
-                    "label": "Supprime le véhicule occupé par le joueur",
+                    "label": "Supprimez le véhicule",
                     "success": "Véhicule supprimé !"
                 },
                 "boost": {
